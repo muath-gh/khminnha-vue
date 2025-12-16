@@ -99,12 +99,33 @@
        
 
         <transition-group  name="fade" tag="div" class="categories-wrapper">
-          <div v-for="(category, index) in state.categories"  class="category-card"
+          <div v-for="(category, index) in state.categories" :key="category.id" class="category-card"
             :class="{ used: category.used }" @click="!category.used && selectCategory(category)">
-            <div class="category-icon">🎯</div>
-            <h4 class="category-name">{{ category.name?.ar || category.name }}</h4>
-            <p class="category-desc">{{ category.description?.ar || category.description }}</p>
-            <span v-if="category.used" class="used-overlay">تم الاختيار</span>
+            <!-- Card Image Background -->
+            <div class="category-image" :style="{
+              backgroundImage: `url(${category.image || `https://images.pexels.com/photos/${[
+                '3184291', '3184292', '3184293', '3184294', '3184295', '3184296'
+              ][index % 6]}/pexels-photo.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop`})`
+            }">
+              <div class="category-overlay"></div>
+            </div>
+
+            <!-- Card Content -->
+            <div class="category-content">
+              <div class="category-icon-wrapper">
+                <div class="category-icon">🎯</div>
+              </div>
+              <h4 class="category-name">{{ category.name?.ar || category.name }}</h4>
+              <p class="category-desc">{{ category.description?.ar || category.description }}</p>
+            </div>
+
+            <!-- Used Badge -->
+            <div v-if="category.used" class="used-badge">
+              <div class="used-badge-content">
+                <span class="used-icon">✓</span>
+                <span class="used-text">تم الاختيار</span>
+              </div>
+            </div>
           </div>
         </transition-group>
       </div>
@@ -902,41 +923,115 @@ function handleGiveUp() {
 }
 
 .category-card {
-  background: var(--card-bg);
-  border: 2px solid var(--border-color);
-  border-radius: 18px;
-  padding: 0.5rem 0.3rem;
-  text-align: center;
+  position: relative;
+  border-radius: 24px;
   cursor: pointer;
-  transition: all 0.3s ease;
-  min-height: 170px;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  min-height: 220px;
+  overflow: hidden;
+  background: var(--card-bg);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .category-card:hover {
-  border-color: var(--accent-color);
-  box-shadow: 0 8px 24px var(--primary-glow);
-  transform: translateY(-5px);
+  transform: translateY(-8px) scale(1.02);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.category-card:hover .category-image {
+  transform: scale(1.1);
+}
+
+.category-card:hover .category-overlay {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.3) 0%,
+    rgba(0, 0, 0, 0.7) 100%
+  );
+}
+
+.category-card:hover .category-icon-wrapper {
+  transform: scale(1.1) rotate(5deg);
+}
+
+.category-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1;
+}
+
+.category-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.75) 100%
+  );
+  transition: all 0.4s ease;
+  z-index: 2;
+}
+
+.category-content {
+  position: relative;
+  z-index: 3;
+  padding: 1.5rem 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  height: 100%;
+  gap: 0.5rem;
+}
+
+.category-icon-wrapper {
+  width: 60px;
+  height: 60px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(10px);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .category-icon {
-  margin-bottom: 0.5rem;
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
 }
 
 .category-name {
-  font-weight: 700;
-  color: var(--text-primary);
-  margin-bottom: 0.4rem;
+  font-weight: 800;
+  font-size: 1.25rem;
+  color: #ffffff;
+  margin-bottom: 0.3rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+  line-height: 1.3;
 }
 
 .category-desc {
-  color: var(--text-secondary);
-  line-height: 1.4;
-  margin-top: 0.3rem;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  font-size: 0.9rem;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+  max-width: 90%;
 }
 
 /* Progress Bar */
@@ -1100,57 +1195,74 @@ function handleGiveUp() {
   }
 }
 
-/* 🎯 Modern Selected Category Effect */
-/* 🎯 تصميم البطاقة المختارة */
-.category-card.used {
-  position: relative;
-  overflow: hidden;
-  border-radius: 16px;
-  animation: selectedPulse 3s infinite ease-in-out;
-}
-
-/* ✨ طمس محتوى البطاقة الأصلية */
-
-.used-overlay {
+/* Used Badge */
+.used-badge {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
   display: flex;
-  flex-direction: column; /* 🔹 عشان الأيقونة تصير تحت الكلمة */
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-
-  background: rgba(34, 197, 94, 0.1);
-  backdrop-filter: blur(6px) saturate(150%);
-  -webkit-backdrop-filter: blur(6px) saturate(150%);
-
-  color: #22c55e; 
-  font-weight: 900;
-  letter-spacing: 0.5px;
-  text-shadow: 0 0 12px rgba(22, 163, 74, 0.6);
-
-  border-radius: 16px;
-  animation: fadeInOverlay 0.5s ease forwards;
-  transition: all 0.3s ease;
-}
-.used-overlay::after {
-  content: "✅";
-  color: #16a34a;
-  margin-top: 0.4rem;
-  filter: drop-shadow(0 0 6px rgba(22, 163, 74, 0.4));
+  z-index: 10;
+  animation: fadeIn 0.3s ease;
 }
 
-
-.category-card.used > *:not(.used-overlay) {
-  filter: blur(3px);
-  opacity: 0.45;
-  transition: all 0.3s ease;
+.used-badge-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes fadeInOverlay {
+.used-icon {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: white;
+  box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+  animation: bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.used-text {
+  color: white;
+  font-weight: 700;
+  font-size: 1.1rem;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.category-card.used {
+  cursor: not-allowed;
+  opacity: 0.95;
+}
+
+.category-card.used:hover {
+  transform: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes fadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
   }
   to {
     opacity: 1;
@@ -1158,72 +1270,19 @@ function handleGiveUp() {
   }
 }
 
-@keyframes selectedPulse {
-  0%, 100% {
-    box-shadow: 0 0 20px rgba(34, 197, 94, 0.3);
-  }
-  50% {
-    box-shadow: 0 0 40px rgba(34, 197, 94, 0.6);
-  }
-}
-
-
-@keyframes selectedPulse {
-  0%, 100% {
-    box-shadow:
-      0 0 20px rgba(34, 197, 94, 0.3),
-      inset 0 0 10px rgba(34, 197, 94, 0.1);
-  }
-  50% {
-    box-shadow:
-      0 0 40px rgba(34, 197, 94, 0.6),
-      inset 0 0 20px rgba(34, 197, 94, 0.15);
-  }
-}
-
-/* ✅ Animated check badge */
-/* .category-card.used::before {
-  content: "✓";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) scale(0);
-  font-size: 3rem;
-  color: #22c55e;
-  font-weight: 900;
-  text-shadow: 0 0 20px rgba(34, 197, 94, 0.6);
-  opacity: 0;
-  animation: checkPop 0.8s ease forwards;
-} */
-
-@keyframes checkPop {
+@keyframes bounce {
   0% {
-    transform: translate(-50%, -50%) scale(0);
-    opacity: 0;
+    transform: scale(0);
   }
   50% {
-    transform: translate(-50%, -50%) scale(1.3);
-    opacity: 1;
+    transform: scale(1.2);
   }
   100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 1;
-  }
-}
-
-
-
-@keyframes overlayFadeIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
     transform: scale(1);
   }
 }
 
+/* Removed old used-overlay styles - now using used-badge */
 
 @keyframes slideUpOverlay {
   from {
@@ -3218,8 +3277,20 @@ function handleGiveUp() {
   }
 
   .category-card {
-    min-height: 100px;
-    padding: 0.5rem 0.35rem;
+    min-height: 180px;
+  }
+
+  .category-content {
+    padding: 1rem 0.75rem;
+  }
+
+  .category-icon-wrapper {
+    width: 50px;
+    height: 50px;
+  }
+
+  .category-icon {
+    font-size: 1.5rem;
   }
 
   .category-name {
@@ -3227,7 +3298,7 @@ function handleGiveUp() {
   }
 
   .category-desc {
-    font-size: 0.8rem;
+    font-size: 0.85rem;
   }
 
   .categories-wrapper {
