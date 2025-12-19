@@ -171,6 +171,7 @@ async function fetchUserById(id: number): Promise<User | null> {
         name: cat.name,
         slug: cat.slug,
         description: cat.description,
+        image: cat.image,
         used: cat.used ?? false,
       }));
 

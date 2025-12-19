@@ -96,36 +96,59 @@
       <div v-if="showCategories" class="categories-grid" :class="{ 'has-sidebar': state.conversation.length > 0 && !isLoadingQuestions }">
         <h3 class="section-title">في أي تصنيف تريد أن تسأل؟ 🎮</h3>
 
-       
-
-        <transition-group  name="fade" tag="div" class="categories-wrapper">
-          <div v-for="(category, index) in state.categories" :key="category.id" class="category-card"
-            :class="{ used: category.used }" @click="!category.used && selectCategory(category)">
-            <!-- Card Image Background -->
-            <div class="category-image" :style="{
-              backgroundImage: `url(${category.image || `https://images.pexels.com/photos/${[
-                '3184291', '3184292', '3184293', '3184294', '3184295', '3184296'
-              ][index % 6]}/pexels-photo.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop`})`
-            }">
-              <div class="category-overlay"></div>
-            </div>
-
-            <!-- Card Content -->
-            <div class="category-content">
-              <div class="category-icon-wrapper">
-                <div class="category-icon">🎯</div>
-              </div>
-              <h4 class="category-name">{{ category.name?.ar || category.name }}</h4>
-              <p class="category-desc">{{ category.description?.ar || category.description }}</p>
-            </div>
-
-            <!-- Used Badge -->
-            <div v-if="category.used" class="used-badge">
-              <div class="used-badge-content">
-                <span class="used-icon">✓</span>
-                <span class="used-text">تم الاختيار</span>
+        <transition-group name="category-stagger" tag="div" class="categories-wrapper">
+          <div
+            v-for="(category, index) in state.categories"
+            :key="category.id"
+            class="category-card"
+            :class="{ used: category.used }"
+            :style="{ '--card-index': index }"
+            @click="!category.used && selectCategory(category)"
+          >
+            <!-- Card Image Background with Parallax Effect -->
+            <div class="category-image-container">
+              <div class="category-image" :style="{
+                backgroundImage: `url(${category.image || getCategoryPlaceholderImage(index)})`
+              }">
+                <div class="category-image-overlay"></div>
               </div>
             </div>
+
+            <!-- Glassmorphic Content Container -->
+            <div class="category-content-wrapper">
+              <div class="category-content">
+                <div class="category-icon-ring">
+                  <div class="category-icon-inner">
+                    {{ getCategoryIcon(index) }}
+                  </div>
+                  <div class="category-icon-glow"></div>
+                </div>
+                <h4 class="category-title">{{ category.name?.ar || category.name }}</h4>
+                <p class="category-description">{{ category.description?.ar || category.description || 'اختر هذا التصنيف لبدء الأسئلة' }}</p>
+                <div class="category-arrow">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M5 12h14M12 5l7 7-7 7"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            <!-- Shine Effect -->
+            <div class="category-shine"></div>
+
+            <!-- Used Badge with Animation -->
+            <transition name="badge-appear">
+              <div v-if="category.used" class="category-used-badge">
+                <div class="used-badge-inner">
+                  <div class="used-checkmark">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="20 6 9 17 4 12"></polyline>
+                    </svg>
+                  </div>
+                  <span class="used-label">تم الاختيار</span>
+                </div>
+              </div>
+            </transition>
           </div>
         </transition-group>
       </div>
@@ -303,6 +326,28 @@ const getImageUrl = (image: string | null) => {
   if (!image) return null;
   return `${storageUrl}/${image}`;
 };
+
+const getCategoryPlaceholderImage = (index: number) => {
+  const images = [
+    'https://images.pexels.com/photos/276267/pexels-photo-276267.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/417074/pexels-photo-417074.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1629236/pexels-photo-1629236.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1166209/pexels-photo-1166209.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/114979/pexels-photo-114979.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1181671/pexels-photo-1181671.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1109543/pexels-photo-1109543.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1103970/pexels-photo-1103970.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1557251/pexels-photo-1557251.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+    'https://images.pexels.com/photos/1939485/pexels-photo-1939485.jpeg?auto=compress&cs=tinysrgb&w=600&h=400&fit=crop',
+  ];
+  return images[index % images.length];
+};
+
+const getCategoryIcon = (index: number) => {
+  const icons = ['🎯', '🎮', '🏆', '⚡', '🌟', '🎨', '🚀', '💎', '🎪', '🎭'];
+  return icons[index % icons.length];
+};
+
 watch(showCategories, (val) => {
 
   isConversationOpen.value = !val;
@@ -922,166 +967,270 @@ function handleGiveUp() {
   }
 }
 
+/* Modern Category Card Styles with Glassmorphism */
 .category-card {
   position: relative;
-  border-radius: 24px;
+  border-radius: 28px;
   cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-  min-height: 220px;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-height: 280px;
   overflow: hidden;
-  background: var(--card-bg);
-  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.12);
   display: flex;
   flex-direction: column;
-  border: 2px solid transparent;
+  animation: categoryFadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation-delay: calc(var(--card-index) * 0.08s);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+@keyframes categoryFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(40px) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .category-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
+  border-radius: 28px;
+  padding: 2px;
   background: linear-gradient(135deg,
-    rgba(0, 212, 255, 0.08) 0%,
-    rgba(248, 201, 0, 0.08) 50%,
-    rgba(0, 168, 232, 0.08) 100%
+    rgba(0, 212, 255, 0.5),
+    rgba(248, 201, 0, 0.5),
+    rgba(0, 168, 232, 0.5)
   );
-  z-index: 1;
-  opacity: 1;
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  opacity: 0.6;
   transition: opacity 0.4s ease;
+  z-index: 2;
 }
 
 .category-card:hover {
-  transform: translateY(-12px) scale(1.03);
-  box-shadow: 0 16px 48px rgba(0, 212, 255, 0.25), 0 0 0 3px rgba(248, 201, 0, 0.3);
-  border-color: rgba(248, 201, 0, 0.5);
+  transform: translateY(-16px) scale(1.05);
+  box-shadow:
+    0 20px 60px rgba(0, 212, 255, 0.3),
+    0 0 80px rgba(248, 201, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .category-card:hover::before {
-  opacity: 0.3;
+  opacity: 1;
 }
 
-.category-card:hover .category-image {
-  transform: scale(1.15) rotate(2deg);
-  opacity: 0.85;
-}
-
-.category-card:hover .category-overlay {
-  background: linear-gradient(
-    135deg,
-    rgba(0, 212, 255, 0.75) 0%,
-    rgba(248, 201, 0, 0.65) 50%,
-    rgba(0, 168, 232, 0.75) 100%
-  );
-}
-
-.category-card:hover .category-icon-wrapper {
-  transform: scale(1.15) rotate(10deg);
-  background: linear-gradient(135deg, #00d4ff 0%, #F8C900 100%);
-  box-shadow: 0 8px 32px rgba(248, 201, 0, 0.5);
+.category-image-container {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 28px;
 }
 
 .category-image {
-  position: absolute;
-  top: 0;
-  left: 0;
   width: 100%;
   height: 100%;
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  opacity: 0.3;
-  z-index: 1;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(1.1);
 }
 
-.category-overlay {
+.category-card:hover .category-image {
+  transform: scale(1.25) rotate(2deg);
+}
+
+.category-image-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
+  inset: 0;
   background: linear-gradient(
     135deg,
-    rgba(0, 212, 255, 0.25) 0%,
-    rgba(248, 201, 0, 0.2) 50%,
-    rgba(0, 168, 232, 0.25) 100%
+    rgba(0, 0, 0, 0.7) 0%,
+    rgba(0, 212, 255, 0.4) 50%,
+    rgba(248, 201, 0, 0.4) 100%
   );
-  transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 2;
+  transition: all 0.5s ease;
+  backdrop-filter: blur(0px);
+}
+
+.category-card:hover .category-image-overlay {
+  background: linear-gradient(
+    135deg,
+    rgba(0, 0, 0, 0.6) 0%,
+    rgba(0, 212, 255, 0.5) 50%,
+    rgba(248, 201, 0, 0.5) 100%
+  );
+  backdrop-filter: blur(2px);
+}
+
+.category-content-wrapper {
+  position: relative;
+  z-index: 3;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 1.8rem 1.5rem;
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.9) 0%,
+    rgba(0, 0, 0, 0.7) 40%,
+    transparent 100%
+  );
+  transition: all 0.4s ease;
+}
+
+.category-card:hover .category-content-wrapper {
+  background: linear-gradient(
+    to top,
+    rgba(0, 0, 0, 0.95) 0%,
+    rgba(0, 0, 0, 0.8) 50%,
+    transparent 100%
+  );
 }
 
 .category-content {
-  position: relative;
-  z-index: 3;
-  padding: 1.5rem 1rem;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  height: 100%;
-  gap: 0.5rem;
+  gap: 1rem;
+  text-align: right;
 }
 
-.category-icon-wrapper {
+.category-icon-ring {
+  position: relative;
   width: 70px;
   height: 70px;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.2) 0%, rgba(248, 201, 0, 0.2) 100%);
-  backdrop-filter: blur(10px);
-  border: 3px solid rgba(248, 201, 0, 0.6);
+  align-self: flex-start;
+  margin-bottom: 0.5rem;
+}
+
+.category-icon-inner {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg,
+    rgba(0, 212, 255, 0.15),
+    rgba(248, 201, 0, 0.15)
+  );
+  backdrop-filter: blur(20px) saturate(180%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 0.5rem;
-  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 8px 24px rgba(0, 212, 255, 0.3), 0 0 40px rgba(248, 201, 0, 0.2);
-  position: relative;
+  font-size: 2.5rem;
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 8px 32px rgba(0, 212, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
 }
 
-.category-icon-wrapper::after {
-  content: '';
+.category-card:hover .category-icon-inner {
+  transform: scale(1.2) rotate(10deg);
+  background: linear-gradient(135deg,
+    rgba(0, 212, 255, 0.3),
+    rgba(248, 201, 0, 0.3)
+  );
+  box-shadow:
+    0 12px 48px rgba(248, 201, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+.category-icon-glow {
   position: absolute;
-  inset: -8px;
+  inset: -12px;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(0, 212, 255, 0.3), rgba(248, 201, 0, 0.3));
-  filter: blur(8px);
+  background: linear-gradient(135deg,
+    rgba(0, 212, 255, 0.4),
+    rgba(248, 201, 0, 0.4)
+  );
+  filter: blur(20px);
   opacity: 0;
-  transition: opacity 0.4s ease;
+  transition: opacity 0.5s ease;
   z-index: -1;
 }
 
-.category-card:hover .category-icon-wrapper::after {
+.category-card:hover .category-icon-glow {
   opacity: 1;
 }
 
-.category-icon {
-  font-size: 2.2rem;
-  filter: drop-shadow(0 4px 8px rgba(0, 212, 255, 0.4));
-}
-
-.category-name {
-  font-weight: 800;
-  font-size: 1.3rem;
-  background: linear-gradient(135deg, #00d4ff 0%, #F8C900 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 0.3rem;
+.category-title {
+  font-weight: 900;
+  font-size: 1.5rem;
+  color: white;
+  text-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.5),
+    0 0 20px rgba(0, 212, 255, 0.3);
   line-height: 1.3;
-  filter: drop-shadow(0 2px 4px rgba(0, 212, 255, 0.2));
+  margin: 0;
+  transition: all 0.3s ease;
 }
 
-.category-desc {
-  color: var(--text-primary);
-  line-height: 1.5;
+.category-card:hover .category-title {
+  text-shadow:
+    0 2px 12px rgba(0, 0, 0, 0.7),
+    0 0 30px rgba(248, 201, 0, 0.6);
+  transform: translateX(-8px);
+}
+
+.category-description {
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.6;
   font-size: 0.95rem;
-  max-width: 90%;
-  font-weight: 500;
-  opacity: 0.85;
+  font-weight: 400;
+  margin: 0;
+  opacity: 0.9;
+  transition: all 0.3s ease;
+}
+
+.category-card:hover .category-description {
+  opacity: 1;
+  color: rgba(255, 255, 255, 0.95);
+  transform: translateX(-8px);
+}
+
+.category-arrow {
+  width: 32px;
+  height: 32px;
+  color: rgba(255, 255, 255, 0.7);
+  align-self: flex-start;
+  transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  opacity: 0;
+  transform: translateX(-10px);
+}
+
+.category-card:hover .category-arrow {
+  opacity: 1;
+  transform: translateX(0);
+  color: rgba(248, 201, 0, 1);
+}
+
+.category-shine {
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    transparent 30%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 70%
+  );
+  transform: translateX(-100%) translateY(-100%) rotate(45deg);
+  transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.category-card:hover .category-shine {
+  transform: translateX(100%) translateY(100%) rotate(45deg);
 }
 
 /* Progress Bar */
@@ -1109,6 +1258,25 @@ function handleGiveUp() {
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
+}
+
+.category-stagger-enter-active,
+.category-stagger-leave-active {
+  transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.category-stagger-enter-from {
+  opacity: 0;
+  transform: translateY(40px) scale(0.9);
+}
+
+.category-stagger-leave-to {
+  opacity: 0;
+  transform: translateY(-40px) scale(0.9);
+}
+
+.category-stagger-move {
+  transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .question-list-move,
@@ -1243,97 +1411,169 @@ function handleGiveUp() {
     padding-left: 1rem;
     padding-right: 1rem;
   }
+
+  .category-card {
+    min-height: 240px;
+  }
+
+  .category-icon-ring {
+    width: 60px;
+    height: 60px;
+  }
+
+  .category-icon-inner {
+    font-size: 2rem;
+  }
+
+  .category-title {
+    font-size: 1.3rem;
+  }
+
+  .category-description {
+    font-size: 0.9rem;
+  }
+
+  .used-checkmark {
+    width: 70px;
+    height: 70px;
+  }
+
+  .used-checkmark svg {
+    width: 40px;
+    height: 40px;
+  }
+
+  .used-label {
+    font-size: 1.2rem;
+  }
 }
 
-/* Used Badge */
-.used-badge {
+/* Modern Used Badge */
+.category-used-badge {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: linear-gradient(135deg,
-    rgba(0, 212, 255, 0.95) 0%,
-    rgba(248, 201, 0, 0.95) 50%,
-    rgba(0, 168, 232, 0.95) 100%
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    rgba(0, 212, 255, 0.96) 0%,
+    rgba(248, 201, 0, 0.96) 50%,
+    rgba(0, 168, 232, 0.96) 100%
   );
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(20px) saturate(180%);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 10;
-  animation: fadeIn 0.3s ease;
+  border-radius: 28px;
 }
 
-.used-badge-content {
+.used-badge-inner {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.75rem;
-  animation: scaleIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  gap: 1rem;
+  animation: usedBadgeScale 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.used-icon {
-  width: 70px;
-  height: 70px;
+@keyframes usedBadgeScale {
+  0% {
+    opacity: 0;
+    transform: scale(0.3) rotate(-10deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.used-checkmark {
+  width: 80px;
+  height: 80px;
   background: white;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 2.5rem;
-  color: #00d4ff;
-  box-shadow: 0 12px 40px rgba(255, 255, 255, 0.5), 0 0 60px rgba(248, 201, 0, 0.6);
-  animation: bounce 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  border: 4px solid rgba(248, 201, 0, 0.8);
+  box-shadow:
+    0 16px 48px rgba(0, 0, 0, 0.3),
+    0 0 60px rgba(255, 255, 255, 0.5),
+    inset 0 2px 0 rgba(255, 255, 255, 0.5);
+  animation: checkmarkBounce 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+  border: 4px solid rgba(248, 201, 0, 1);
 }
 
-.used-text {
+@keyframes checkmarkBounce {
+  0% {
+    transform: scale(0) rotate(-180deg);
+  }
+  50% {
+    transform: scale(1.3) rotate(10deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+.used-checkmark svg {
+  width: 48px;
+  height: 48px;
+  color: #00d4ff;
+  stroke-width: 4;
+  animation: checkmarkDraw 0.5s ease 0.3s backwards;
+}
+
+@keyframes checkmarkDraw {
+  from {
+    stroke-dasharray: 0 100;
+  }
+  to {
+    stroke-dasharray: 100 0;
+  }
+}
+
+.used-label {
   color: white;
   font-weight: 900;
-  font-size: 1.3rem;
-  text-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  letter-spacing: 0.5px;
+  font-size: 1.4rem;
+  text-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    0 0 30px rgba(255, 255, 255, 0.3);
+  letter-spacing: 1px;
+  animation: labelFadeIn 0.4s ease 0.4s backwards;
+}
+
+@keyframes labelFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .category-card.used {
   cursor: not-allowed;
-  opacity: 0.98;
+  opacity: 0.95;
+  filter: saturate(0.8);
 }
 
 .category-card.used:hover {
-  transform: none;
-  box-shadow: 0 8px 32px rgba(0, 212, 255, 0.12);
+  transform: translateY(-4px) scale(1.01);
+  box-shadow: 0 12px 40px rgba(0, 212, 255, 0.2);
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
+.badge-appear-enter-active {
+  animation: badgeAppear 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-@keyframes scaleIn {
+@keyframes badgeAppear {
   from {
     opacity: 0;
     transform: scale(0.5);
   }
   to {
     opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes bounce {
-  0% {
-    transform: scale(0);
-  }
-  50% {
-    transform: scale(1.2);
-  }
-  100% {
     transform: scale(1);
   }
 }
