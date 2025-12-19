@@ -10,6 +10,7 @@ import type { User } from '../models/User';
 import {QuestionOption} from '../models/QuestionOption';
 const gameApiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/game-ai`;
 import type { Question } from '../models/Question';
+import type { SubCategory } from '../models/SubCategory';
 const headers = {
   'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
   'Content-Type': 'application/json',
@@ -34,6 +35,8 @@ interface GameState {
   selectedLevel: Level | null;
   categories: Category[];
   selectedCategory: Category | null;
+  subCategories: SubCategory[];
+selectedSubCategory: SubCategory | null;
   questions: Question[];
  conversation: { option: QuestionOption; answer: boolean }[];
   questionsAsked: number;
@@ -166,13 +169,15 @@ async function fetchUserById(id: number): Promise<User | null> {
       state.value.conversation = [];
       state.value.questionsAsked = 0;
 
-      state.value.categories = (data.categories || []).map((cat: any) => ({
-        id: cat.id,
-        name: cat.name,
-        slug: cat.slug,
-        description: cat.description,
-        used: cat.used ?? false,
-      }));
+    state.value.categories = (data.categories || []).map((cat: any) => ({
+  id: cat.id,
+  name: cat.name,
+  slug: cat.slug,
+  description: cat.description,
+  used: cat.used ?? false,
+  sub_categories: cat.sub_categories || [],
+}));
+
 
       state.value.categoriesCount = data.categories_count || level.categories_count;
       state.value.timeLimit = data.time_per_attempt || level.time_per_attempt;
@@ -269,35 +274,33 @@ async function fetchUserById(id: number): Promise<User | null> {
     }
   }
 
-  async function fetchQuestionsByCategory(categoryId: number): Promise<Question[]> {
-    if (!state.value.sessionId) {
-      console.error('No active session to fetch questions.');
-      return [];
-    }
+async function fetchQuestionsBySubCategory(subCategoryId: number): Promise<Question[]> {
+  if (!state.value.sessionId) return [];
 
-    try {
-      const response = await api.post('/fetch-questions', {
-        session_token: state.value.sessionId,
-        category_id: categoryId,
-      });
+  try {
+    const response = await api.post('/fetch-questions', {
+      session_token: state.value.sessionId,
+      sub_category_id: subCategoryId,
+    });
 
-      const q = response.data.questions;
-
+    const q = response.data.questions;
 
     state.value.questions = [{
-  id: q.question_id,
-  text: q.text,
-  hint: q.hint,
-  options: q.options
-}];
-      state.value.selectedCategory = state.value.categories.find(c => c.id === categoryId) || null;
-      state.value.status = 'playing';
-     return state.value.questions;
-    } catch (error) {
-      console.error('Error fetching category questions:', error);
-      return [];
-    }
+      id: q.question_id,
+      text: q.text,
+      hint: q.hint,
+      options: q.options,
+    }];
+
+    state.value.status = 'playing';
+    return state.value.questions;
+
+  } catch (error) {
+    console.error('Error fetching sub category questions:', error);
+    return [];
   }
+}
+
 
  async function askQuestion(option: QuestionOption) {
   if (!state.value.sessionId || !canAskQuestion.value) return null;
@@ -529,7 +532,7 @@ async function fetchUserById(id: number): Promise<User | null> {
     fetchLevels,
     fetchNextQuestions,
     resetTimerForRound,
-    fetchQuestionsByCategory,
+    fetchQuestionsBySubCategory,
     startTimer,
     verifyGuess,
     fetchSuggestions,

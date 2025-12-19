@@ -56,7 +56,7 @@
 
       <div class="main-game-area" :class="{ 'has-sidebar': state.conversation.length > 0 && !isLoadingQuestions }">
 
-<div v-if="!showCategories && !isLoadingQuestions" class="question-area">
+<div v-if="!showCategories && !isLoadingQuestions && currentStep === 'question'" class="question-area">
   <div class="question-title-wrapper">
     <div class="question-icon-ring">
       <div class="question-icon">❓</div>
@@ -93,42 +93,68 @@
 </div>
       </div>
       <!-- 🔹 عرض الكاتيجوري أولاً -->
-      <div v-if="showCategories" class="categories-grid" :class="{ 'has-sidebar': state.conversation.length > 0 && !isLoadingQuestions }">
+      <div v-if="currentStep === 'categories'" class="categories-grid" :class="{ 'has-sidebar': state.conversation.length > 0 && !isLoadingQuestions }">
         <h3 class="section-title">في أي تصنيف تريد أن تسأل؟ 🎮</h3>
 
        
 
-        <transition-group  name="fade" tag="div" class="categories-wrapper">
-          <div v-for="(category, index) in state.categories" :key="category.id" class="category-card"
-            :class="{ used: category.used }" @click="!category.used && selectCategory(category)">
-            <!-- Card Image Background -->
-            <div class="category-image" :style="{
-              backgroundImage: `url(${category.image || `https://images.pexels.com/photos/${[
-                '3184291', '3184292', '3184293', '3184294', '3184295', '3184296'
-              ][index % 6]}/pexels-photo.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop`})`
-            }">
-              <div class="category-overlay"></div>
-            </div>
+      <transition-group name="fade" tag="div" class="categories-wrapper">
+  <div v-for="(category, index) in state.categories" :key="category.id" class="category-card"
+    :class="{ used: category.used }" @click="!category.used && selectCategory(category)">
+    
+    <!-- Card Image Background -->
+    <div class="category-image" :style="{
+      backgroundImage: `url(${category.image || `https://images.pexels.com/photos/${[
+        '3184291', '3184292', '3184293', '3184294', '3184295', '3184296'
+      ][index % 6]}/pexels-photo.jpeg?auto=compress&cs=tinysrgb&w=400&h=300&fit=crop`})`
+    }">
+      <div class="category-overlay"></div>
+    </div>
 
-            <!-- Card Content -->
-            <div class="category-content">
-              <div class="category-icon-wrapper">
-                <div class="category-icon">🎯</div>
-              </div>
-              <h4 class="category-name">{{ category.name?.ar || category.name }}</h4>
-              <p class="category-desc">{{ category.description?.ar || category.description }}</p>
-            </div>
-
-            <!-- Used Badge -->
-            <div v-if="category.used" class="used-badge">
-              <div class="used-badge-content">
-                <span class="used-icon">✓</span>
-                <span class="used-text">تم الاختيار</span>
-              </div>
-            </div>
-          </div>
-        </transition-group>
+    <!-- Card Content -->
+    <div class="category-content">
+      <div class="category-icon-wrapper">
+        <div class="category-icon">🎯</div>
       </div>
+      <h4 class="category-name">{{ category.name?.ar || category.name }}</h4>
+      <p class="category-desc">{{ category.description?.ar || category.description }}</p>
+      
+      <!-- Accent Line -->
+      <div class="accent-line"></div>
+    </div>
+
+    <!-- Used Badge -->
+    <div v-if="category.used" class="used-badge">
+      <div class="used-badge-content">
+        <span class="used-icon">✓</span>
+        <span class="used-text">تم الاختيار</span>
+      </div>
+    </div>
+
+    <!-- Hover Indicator -->
+    <div class="hover-indicator"></div>
+  </div>
+</transition-group>
+      </div>
+
+      <div v-if="currentStep === 'subCategories'" class="categories-grid">
+  <h3 class="section-title">اختر تصنيف فرعي 🔍</h3>
+
+  <transition-group name="fade" tag="div" class="categories-wrapper">
+    <div
+      v-for="sub in state.subCategories"
+      :key="sub.id"
+      class="category-card"
+      @click="selectSubCategory(sub)"
+    >
+      <div class="category-content">
+        <h4 class="category-name">{{ sub.name?.ar }}</h4>
+        <p class="category-desc">{{ sub.description?.ar }}</p>
+      </div>
+    </div>
+  </transition-group>
+</div>
+
 
       <!-- 🔹 AI Thinking Loader Overlay -->
       <transition name="fade-overlay">
@@ -277,6 +303,9 @@ const themeStore = useThemeStore();
 const { playSound } = themeStore;
 const { state, categoriesRemaining, canAskQuestion ,timeElapsed } = storeToRefs(gameStore);
 const showConversationAccordion = computed(() => showCategories.value);
+type Step = 'categories' | 'subCategories' | 'question';
+
+const currentStep = ref<Step>('categories');
 const showCategories = ref(true);
 const isConversationAccordion = computed(() => showCategories.value);
 const isConversationOpen = ref(false);
@@ -340,15 +369,29 @@ onMounted(() => {
 async function selectCategory(category: Category) {
   playSound('click');
   showCategories.value = false;
+ 
+
+  state.value.subCategories = category.sub_categories || [];
+
+  state.value.selectedCategory = category;
+  currentStep.value = 'subCategories';
+ 
+}
+async function selectSubCategory(subCategory: any) {
+  playSound('click');
+
+  gameStore.state.selectedSubCategory = subCategory;
   isLoadingQuestions.value = true;
 
-  const questions = await gameStore.fetchQuestionsByCategory(category.id);
+  const questions = await gameStore.fetchQuestionsBySubCategory(subCategory.id);
 
   isLoadingQuestions.value = false;
-
-  if (questions.length) {
-    gameStore.state.status = 'playing';
-    gameStore.state.selectedCategory = category;
+  currentStep.value = 'question';
+  gameStore.startTimer();
+state.value.selectedSubCategory = subCategory;
+   if (questions.length) {
+    state.value.status = 'playing';
+    
     gameStore.startTimer();
   }
 }
@@ -3628,4 +3671,234 @@ function handleGiveUp() {
   }
 }
 
+</style>
+<style scoped>
+.categories-wrapper {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 24px;
+  padding: 20px;
+}
+
+.category-card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 2px solid transparent;
+}
+
+.category-card:hover:not(.used) {
+  transform: translateY(-8px);
+  box-shadow: 0 12px 40px rgba(248, 201, 0, 0.25);
+  border-color: #F8C900;
+}
+
+.category-card.used {
+  opacity: 0.6;
+  cursor: not-allowed;
+  filter: grayscale(0.5);
+}
+
+/* Image Section */
+.category-image {
+  position: relative;
+  width: 100%;
+  height: 180px;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.category-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.1) 0%,
+    rgba(0, 0, 0, 0.3) 100%
+  );
+  transition: opacity 0.3s ease;
+}
+
+.category-card:hover:not(.used) .category-overlay {
+  opacity: 0.7;
+}
+
+/* Content Section */
+.category-content {
+  position: relative;
+  padding: 24px 20px;
+  background: #ffffff;
+}
+
+/* Icon Wrapper */
+.category-icon-wrapper {
+  position: absolute;
+  top: -28px;
+  right: 20px;
+  width: 56px;
+  height: 56px;
+  background: #F8C900;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px rgba(248, 201, 0, 0.35);
+  transition: all 0.3s ease;
+}
+
+.category-card:hover:not(.used) .category-icon-wrapper {
+  transform: scale(1.1) rotate(5deg);
+  box-shadow: 0 12px 32px rgba(248, 201, 0, 0.45);
+}
+
+.category-icon {
+  font-size: 28px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+}
+
+/* Text Content */
+.category-name {
+  margin: 8px 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a1a1a;
+  text-align: right;
+  direction: rtl;
+  line-height: 1.3;
+}
+
+.category-desc {
+  margin: 0 0 16px;
+  font-size: 14px;
+  color: #666;
+  text-align: right;
+  direction: rtl;
+  line-height: 1.6;
+  min-height: 40px;
+}
+
+/* Accent Line */
+.accent-line {
+  width: 40px;
+  height: 3px;
+  background: #F8C900;
+  border-radius: 2px;
+  margin-right: auto;
+  transition: width 0.3s ease;
+}
+
+.category-card:hover:not(.used) .accent-line {
+  width: 80px;
+}
+
+/* Used Badge */
+.used-badge {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 10;
+}
+
+.used-badge-content {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  background: rgba(34, 197, 94, 0.95);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.used-icon {
+  font-size: 16px;
+  font-weight: bold;
+  color: #ffffff;
+}
+
+.used-text {
+  font-size: 13px;
+  font-weight: 600;
+  color: #ffffff;
+  white-space: nowrap;
+}
+
+/* Hover Indicator */
+.hover-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: #F8C900;
+  transform: scaleX(0);
+  transform-origin: right;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.category-card:hover:not(.used) .hover-indicator {
+  transform: scaleX(1);
+}
+
+/* Fade Transition */
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.5s ease;
+}
+
+.fade-enter-from {
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.fade-leave-to {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.fade-move {
+  transition: transform 0.5s ease;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .categories-wrapper {
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
+
+  .category-image {
+    height: 150px;
+  }
+
+  .category-icon-wrapper {
+    width: 48px;
+    height: 48px;
+    top: -24px;
+  }
+
+  .category-icon {
+    font-size: 24px;
+  }
+
+  .category-name {
+    font-size: 18px;
+  }
+
+  .category-desc {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .categories-wrapper {
+    grid-template-columns: 1fr;
+  }
+}
 </style>

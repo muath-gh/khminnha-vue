@@ -1,3 +1,5 @@
+import type { SubCategory } from './SubCategory';
+
 export interface Category {
   id: number;
   theme_id: number;
@@ -7,4 +9,5 @@ export interface Category {
   created_at?: string;
   updated_at?: string;
   used?: boolean;
+  sub_categories?: SubCategory[];
 }
