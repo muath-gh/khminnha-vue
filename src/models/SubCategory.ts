@@ -3,4 +3,6 @@ export interface SubCategory {
   name: any;
   slug: string;
   description:string
+  used?: boolean;
+  image?: string | null;
 }

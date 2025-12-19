@@ -75,10 +75,21 @@ export const useGameStore = defineStore('game', () => {
   let timerInterval: number | null = null;
 
   const isPlaying = computed(() => state.value.status === 'playing');
-  const categoriesRemaining = computed(() => {
-    const usedCategories = state.value.categories.filter(c => c.used).length;
-    return Math.max(state.value.categoriesCount - usedCategories, 0);
-  }); const timeElapsed = computed(() => state.value.timeLimit - state.value.timeRemaining);
+ const categoriesRemaining = computed(() => {
+  return 10;
+  if (!state.value.subCategories.length) return state.value.categoriesCount;
+
+  const usedSubCategories = state.value.subCategories.filter(
+    sc => sc.used === true
+  ).length;
+
+  return Math.max(
+    state.value.subCategories.length - usedSubCategories,
+    0
+  );
+});
+
+  const timeElapsed = computed(() => state.value.timeLimit - state.value.timeRemaining);
   const canAskQuestion = computed(() => categoriesRemaining.value > 0 && state.value.timeRemaining > 0);
 async function fetchThemeById(id: number): Promise<Theme> {
   try {
@@ -323,12 +334,20 @@ async function fetchQuestionsBySubCategory(subCategoryId: number): Promise<Quest
 
     state.value.questionsAsked += 1;
 
-    if (data.categories) {
-      state.value.categories = data.categories;
-    }
+  if (state.value.selectedSubCategory) {
+  const subId = state.value.selectedSubCategory.id;
+
+  state.value.subCategories = state.value.subCategories.map(sc =>
+    sc.id === subId
+      ? { ...sc, used: true }
+      : sc
+  );
+}
+
 
     state.value.questions = [];
     state.value.selectedCategory = null;
+    state.value.selectedSubCategory = null;
     state.value.status = 'idle';
 
     return isYes;
